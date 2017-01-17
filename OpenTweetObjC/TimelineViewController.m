@@ -10,8 +10,9 @@
 #import "TimelineViewController.h"
 
 @interface TimelineViewController ()
-@property (nonatomic, strong) NSArray *timelineTweets;
+@property (strong, nonatomic) NSArray *timelineTweets;
 @property (strong, nonatomic) NSMutableDictionary *heightLookups;
+@property (weak, nonatomic) IBOutlet UITableView *tableView;
 @end
 
 @implementation TimelineViewController
@@ -35,6 +36,10 @@
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
+}
+
+- (void)didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation {
+    [self.tableView reloadData];
 }
 
 #pragma mark - TableView Data Source

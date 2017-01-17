@@ -57,7 +57,17 @@
     // or has been preserved for us. We need to do this to keep heights correct and consistent.
     CGFloat bottomBorder = self.bounds.size.height - (self.contentField.frame.origin.y + self.contentField.frame.size.height);
     
+    NSMutableAttributedString *attribContent = [[NSMutableAttributedString alloc]
+                                                initWithString:cellData[@"content"]
+                                                attributes:@{NSFontAttributeName:self.contentField.font}];
+           //                                                  NSForegroundColorAttributeName:self.contentField.textColor}]; // IF we had a textColor defined use this. But nil is bad
     [self.contentField setText:cellData[@"content"]];   // Well that was easy, wasn't it?
+    // Except I want to find all the @name formats and format them. I'd rather use an NSFormatter but that will take longer
+    NSArray *rangeRuns = [self runsOfNames:cellData[@"content"]];
+    if (rangeRuns.count > 0) {
+        self.contentField.attributedText = [self setupNameRuns:rangeRuns forString:attribContent];
+    }
+    
     // And now find out what the correct minimal size for the text is.
     CGSize newSize = [self.contentField sizeThatFits:CGSizeMake(contentWidth, MAXFLOAT)];
     // We are going to build a new frame for the content so all the content will show
@@ -89,6 +99,53 @@
 
 - (CGFloat)contentHeight {
     return self.bounds.size.height;
+}
+
+- (NSArray*)runsOfNames:(NSString*)theContent {
+    NSMutableArray *runsArray = [NSMutableArray arrayWithCapacity:10];  // Default to 10 slots, probably will never have that many
+    // Build the search sets. Our first character is always @.
+    // We will then scan until we find the firest character in the exclusion set, which is the inverted set of alphanumerics, @, and _
+    NSCharacterSet *atSet = [NSCharacterSet characterSetWithCharactersInString:@"@"];
+    NSMutableCharacterSet *nameExclusionSet = [NSMutableCharacterSet alphanumericCharacterSet];
+    [nameExclusionSet addCharactersInString:@"@_"]; // Not sure what other characters belong in this set. Need name spec for real product
+    [nameExclusionSet invert];
+    
+    NSRange searchRange = NSMakeRange(0, theContent.length);    // Search the whole string
+    while (searchRange.length > 1) {                            // And search until our range is too short for a name
+        NSRange atRange = [theContent rangeOfCharacterFromSet:atSet options:NSLiteralSearch range:searchRange];
+        if (atRange.location == NSNotFound) {
+            break;  // Didn't find any left in the string, bail out
+        }
+        NSRange nameSearchRange = NSMakeRange(atRange.location+1, theContent.length - atRange.location - 1);
+        NSRange nameRange = [theContent rangeOfCharacterFromSet:nameExclusionSet options:NSLiteralSearch range:nameSearchRange];
+        if ((nameRange.location == NSNotFound) || (nameRange.location > searchRange.location+1)) {
+            // Found  a string. Now extract the length
+            if (nameRange.location == NSNotFound) {
+                // The name went ot the end of the string
+                nameRange.location = theContent.length; // Fake the end point to make the next line easier
+            }
+            // OK, I have a valid range now that will be hightlighted later, from the start of atRange until the first non-name character
+            NSRange targetRange = NSMakeRange(atRange.location, nameRange.location - atRange.location);
+            [runsArray addObject:NSStringFromRange(targetRange)];
+            // Fix up the search range now to jump over what we just marked
+            searchRange.location = targetRange.location + targetRange.length;
+            searchRange.length = (theContent.length - searchRange.location);
+        } else {
+            // We didn't find the @ or have enough space for a legit name. leave the search
+            break;
+        }
+    }
+    return runsArray;
+}
+
+- (NSAttributedString*)setupNameRuns:(NSArray*)rangeRuns forString:(NSMutableAttributedString*)theString {
+    
+    NSDictionary *colorTextDict = @{NSForegroundColorAttributeName:[UIColor colorWithRed:32.0f/255.0f green:128.0f/255.0f blue:64.0f/255.0f alpha:1.0f]};
+                                                                
+    for (NSString* rangeString in rangeRuns) {
+        [theString addAttributes:colorTextDict range:NSRangeFromString(rangeString)];
+    }
+    return theString;
 }
 
 @end
