@@ -1,3 +1,23 @@
+Update of project status
+
+Created a new target for Objective-C
+Basic app displays all tweets in a list view
+Tweets display:
+  Sender
+  Date
+  Tweet content
+
+Bonus work:
+Avatars are displayed, however the fetching code is old-style which fights with ATS. I've added an override, but didn't have time to do it with NSURLSession.
+User references in content are hilighted in green
+URLs in content are blue and should be clickable.
+Simple hilighting of selcted tweet is done by emphasizing the selected tweet and dimming other tweets in the list.
+    -- I just realized I have a bug where if you scroll the list, redraw, or rotate the list the hilighting doesn't get preserved. I need to save a bit of state for that and I don't have time
+
+Shane Looker
+
+---------
+
 OpenTweet
 =========
 
