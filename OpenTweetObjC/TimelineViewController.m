@@ -52,9 +52,10 @@
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    NSLog(@"cellForRow %d", (int)indexPath.row);
     MainTweetCellTableViewCell *aCell = (MainTweetCellTableViewCell*) [tableView dequeueReusableCellWithIdentifier:@"mainTweetCell"];
-    [aCell setupFromDict:self.timelineTweets[indexPath.row]];
+    if ([aCell previouslySetup] == NO) {
+        [aCell setupFromDict:self.timelineTweets[indexPath.row]];
+    }
     self.heightLookups[@(indexPath.row)] = @([aCell contentHeight]);
     return aCell;
 }
@@ -70,8 +71,35 @@
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
     // Since heightForRowAtIndexPath is called after the cell has been created and set up, we can ask for the
     // actual height of the cell.
-    NSLog(@"heightForRow %d = %f", (int)indexPath.row, [self.heightLookups[@(indexPath.row)] floatValue]);
     return [self.heightLookups[@(indexPath.row)] floatValue];
+}
+
+- (NSIndexPath*)tableView:(UITableView *)tableView willSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    NSArray *cellArray = [tableView visibleCells];
+
+    MainTweetCellTableViewCell *aCell = (MainTweetCellTableViewCell*)[tableView cellForRowAtIndexPath:indexPath];
+    if (aCell.selected) {
+        [tableView deselectRowAtIndexPath:indexPath animated:YES];
+        for (MainTweetCellTableViewCell *workCell in cellArray) {
+            [workCell normalizeCell];
+        }
+        return nil;
+    } else {
+        // Cell wasn't selected before. Dim all the other cells
+        NSArray *cellArray = [tableView visibleCells];
+        for (MainTweetCellTableViewCell *workCell in cellArray) {
+            if (workCell != aCell) {
+                [workCell dimCell];
+            } else {
+                [workCell hilightCell];
+            }
+        }
+    }
+    return indexPath;
+}
+
+- (void)tableView:(UITableView*)tableView didDeselectRowAtIndexPath:(NSIndexPath*)indexPath {
+    NSLog(@"deselected");
 }
 
 @end

@@ -10,6 +10,10 @@
 
 @interface MainTweetCellTableViewCell : UITableViewCell
 - (void)setupFromDict:(NSDictionary*)cellData;
+- (BOOL)previouslySetup;
 - (CGFloat)contentHeight;
 
+- (void)dimCell;
+- (void)hilightCell;
+- (void)normalizeCell;
 @end

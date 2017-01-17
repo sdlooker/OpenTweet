@@ -10,13 +10,14 @@
 
 @interface MainTweetCellTableViewCell ()
 @property (weak, nonatomic) IBOutlet UILabel *author;
-@property (weak, nonatomic) IBOutlet UILabel *content;
 @property (weak, nonatomic) IBOutlet UILabel *dateString;
 @property (weak, nonatomic) IBOutlet UIImageView *avatarImage;
 @property (weak, nonatomic) IBOutlet UITextView *contentField;
+@property (weak, nonatomic) IBOutlet UIView *backgroundHilight;
+@property (weak, nonatomic) IBOutlet UIView *hilightColoring;
 @property (nonatomic) long identifier;
 @property (nonatomic) long replyTo;
-//@property (nonatomic) CGFloat contentHeight;
+@property (nonatomic) BOOL alreadySetup;
 
 @end
 
@@ -31,6 +32,18 @@
     [super setSelected:selected animated:animated];
 
     // Configure the view for the selected state
+}
+
+- (void)prepareForReuse {
+    self.dateString.text = @"";
+    self.author.text = @"";
+    [self.contentField setText:@""];
+    self.avatarImage.image = nil;
+    self.identifier = 0;
+    self.replyTo = 0;
+    self.backgroundHilight.hidden = YES;
+    self.hilightColoring.hidden = YES;
+    self.alreadySetup = NO;
 }
 
 - (void)setupFromDict:(NSDictionary*)cellData {
@@ -49,8 +62,6 @@
     // manipulation that makes no sense to the unititiated.
     // Note: contentField is the UITextField to hold the actual content
     
-    // Get the size of the current raw field (or its last value)
-    CGSize contentSize = self.contentField.contentSize;
     // Save off the width so we don't change it and screw up calculations when the cell is reused
     CGFloat contentWidth = self.contentField.bounds.size.width;
     // And finally figure out how far from the bottom of the contentField to the cell bottom, which came from the storyboard
@@ -60,7 +71,7 @@
     NSMutableAttributedString *attribContent = [[NSMutableAttributedString alloc]
                                                 initWithString:cellData[@"content"]
                                                 attributes:@{NSFontAttributeName:self.contentField.font}];
-           //                                                  NSForegroundColorAttributeName:self.contentField.textColor}]; // IF we had a textColor defined use this. But nil is bad
+           //     NSForegroundColorAttributeName:self.contentField.textColor}]; // IF we had a textColor defined use this. But nil is bad
     [self.contentField setText:cellData[@"content"]];   // Well that was easy, wasn't it?
     // Except I want to find all the @name formats and format them. I'd rather use an NSFormatter but that will take longer
     NSArray *rangeRuns = [self runsOfNames:cellData[@"content"]];
@@ -86,19 +97,40 @@
     self.bounds = cellRect;
     
     
- //  NSTimeZone *ltz = [NSTimeZone localTimeZone];
- //  self.dateString.text = [NSISO8601DateFormatter stringFromDate:aDate timeZone:ltz formatOptions:NSISO8601DateFormatWithYear | NSISO8601DateFormatWithMonth | NSISO8601DateFormatWithDay | NSISO8601DateFormatWithTime | NSISO8601DateFormatWithDashSeparatorInDate |NSISO8601DateFormatWithSpaceBetweenDateAndTime | NSISO8601DateFormatWithColonSeparatorInTime | NSISO8601DateFormatWithTime];
-    
     NSString *avatarUrl = cellData[@"avatar"];
     if (avatarUrl) {
         // This should be setup on a background thread (more reasonably in a block) to prevent stalls, then have the cell
         // updated on the main thread.
         self.avatarImage.image = [UIImage imageWithData:[NSData dataWithContentsOfURL:[NSURL URLWithString:avatarUrl]]];
     }
+    
+    self.alreadySetup = YES;
+}
+
+- (BOOL)previouslySetup {
+    return self.alreadySetup;
 }
 
 - (CGFloat)contentHeight {
     return self.bounds.size.height;
+}
+
+- (void)dimCell {
+    self.alpha = 0.3f;
+    self.hilightColoring.hidden = YES;
+    self.backgroundHilight.hidden = YES;
+}
+
+- (void)hilightCell {
+    self.alpha = 1.0f;
+    self.hilightColoring.hidden = NO;
+    self.backgroundHilight.hidden = NO;
+}
+
+- (void)normalizeCell {
+    self.alpha = 1.0f;
+    self.hilightColoring.hidden = YES;
+    self.backgroundHilight.hidden = YES;
 }
 
 - (NSArray*)runsOfNames:(NSString*)theContent {
