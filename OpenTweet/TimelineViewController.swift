@@ -13,6 +13,17 @@ class TimelineViewController: UIViewController {
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		// Do any additional setup after loading the view, typically from a nib.
+        let theTweetData = NSData(contentsOfFile:"timeline.json");
+        var json: [String: AnyObject]
+        do {
+          //  json = try JSONSerialization.JSONObjectWithData(theTweetData as! Data, options: []) as? [String:Any]
+            json = try JSONSerialization.jsonObject(with:theTweetData! as Data, options: []) as! [String: AnyObject]
+            NSLog("theTweetDict = %@", json);
+        } catch {
+            print(error)
+        }
+
+        
 	}
 
 	override func didReceiveMemoryWarning() {
